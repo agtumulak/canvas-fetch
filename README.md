@@ -9,6 +9,7 @@ canvas-fetch expects a file named `.canvasfetch` in your home directory.
 
 ```json
 {
+  "base url": "https://umich.instructure.com",
   "target": "~/Documents/School",
   "token": "1770~oqR3HQ70QqESqAC2ky5gni7ltofco9ArSlbnbBKoBO9cMduE9AkTXI2J3XfRwh4A",
   "courses": [

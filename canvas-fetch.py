@@ -8,32 +8,39 @@ from os import makedirs, utime
 from os.path import dirname, exists, expanduser, getmtime, join
 
 
+class CanvasSession(requests.Session):
+
+    def __init__(self, base_url='', headers={}, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.headers.update(headers)
+        self.base_url = base_url
+
+    def getjson(self, url, **kwargs):
+        response = super().get(self.base_url + url, **kwargs)
+        return json.loads(response.content)
+
+
 with open(expanduser('~/.canvasfetch'), 'r') as f:
     config = json.load(f)
-config['target'] = expanduser(config['target'])
+target = expanduser(config['target'])
 headers = {'Authorization': 'Bearer {}'.format(config['token'])}
 
-url = 'https://umich.instructure.com/api/v1/courses'
-response = requests.get(url, headers=headers)
-courses = json.loads(response.content)
-courses = [
-        course
-        for course in courses
-        if course['course_code'] in config['courses']]
-for course in courses:
-    print("Syncing '{}'...".format(course['course_code']))
-    url = 'https://umich.instructure.com/api/v1/courses/{}/folders'.format(
-            course['id'])
-    response = requests.get(url, headers=headers)
-    folders = json.loads(response.content)
-    for folder in folders:
-        url = folder['files_url']
-        response = requests.get(url, headers=headers)
-        files = json.loads(response.content)
+with CanvasSession(base_url=config['base url'], headers=headers) as s:
+    courses = s.getjson('/api/v1/courses')
+    courses = [c for c in courses if c['course_code'] in config['courses']]
+    for course in courses:
+        print("Syncing '{}'...".format(course['course_code']))
+        folders = s.getjson('/api/v1/courses/{}/folders'.format(course['id']))
+        folders = {folder['id']: folder for folder in folders}
+        files = s.getjson('/api/v1/courses/{}/files'.format(course['id']))
         for file in files:
+            folder = folders[file['folder_id']]
+            path = join(
+                    target,
+                    course['course_code'],
+                    folder['full_name'],
+                    file['filename'])
             remote_modified = dateutil.parser.parse(file['modified_at'])
-            # Check if nonexistent or updated recently and request new file if necessary
-            path = join(config['target'], course['course_code'], folder['full_name'], file['filename'])
             if exists(path):
                 local_modified = (
                         datetime
@@ -45,8 +52,8 @@ for course in courses:
             print("Downloading file '{}'...".format(path))
             if not exists(dirname(path)):
                 makedirs(dirname(path))
-            url = file['url']
-            response = requests.get(url, headers=headers)
             with open(path, 'wb') as f:
-                f.write(response.content)
-            utime(path, (remote_modified.timestamp(), remote_modified.timestamp()))
+                f.write(s.get(file['url']).content)
+            utime(
+                    path,
+                    (remote_modified.timestamp(), remote_modified.timestamp()))
