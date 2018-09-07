@@ -62,4 +62,4 @@ try:
                         path,
                         (remote_modified.timestamp(), remote_modified.timestamp()))
 except requests.exceptions.ConnectionError as e:
-    logging.warn('Connection error. Make sure you are connected to the Innernette.')
+    logging.warning('Connection error. Make sure you are connected to the Innernette.')
