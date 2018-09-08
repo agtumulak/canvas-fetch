@@ -2,6 +2,14 @@
 A thing that syncs all your course files to a local directory using the 
 [Canvas LMS API]! Wow!
 
+## Pre-Setup
+A conda environment file, `canvas-fetch.yml`, is provided to satisfy the two
+main dependencies: `requests` and `python-dateutil`.
+
+```console
+$ conda env create -f canvas-fetch.yml
+```
+
 ## Setup
 canvas-fetch expects a file named `.canvasfetch` in your home directory. 
 
