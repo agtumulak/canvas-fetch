@@ -29,3 +29,13 @@ canvas-fetch expects a file named `.canvasfetch` in your home directory.
 
 You will have to generate a token in Canvas under _Account > Settings >
 Approved Integrations_. Don't share it like I do here.
+
+## Scheduling
+The following crontab entry runs canvas-fetch using the correct environment
+every 5 minutes:
+
+```
+*/5 * * * * /usr/local/miniconda3/envs/canvas-fetch/bin/python /absolute/path/to/canvas-fetch.py >> /tmp/canvas-fetch.log 2>&1
+```
+
+Run `tail -f /tmp/canvas-fetch.log` to check that it is running properly.
