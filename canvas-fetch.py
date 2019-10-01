@@ -35,31 +35,28 @@ try:
         for course in courses:
             logging.info("Syncing '{}'...".format(course['course_code']))
             folders = s.getjson('/api/v1/courses/{}/folders'.format(course['id']))
-            folders = {folder['id']: folder for folder in folders}
-            files = s.getjson('/api/v1/courses/{}/files'.format(course['id']))
-            for file in files:
-                folder = folders[file['folder_id']]
-                path = join(
-                        target,
-                        course['course_code'],
-                        folder['full_name'],
-                        file['filename'])
-                remote_modified = dateutil.parser.parse(file['modified_at'])
-                if exists(path):
-                    local_modified = (
-                            datetime
-                            .fromtimestamp(getmtime(path))
-                            .astimezone(remote_modified.tzinfo))
-                    if local_modified == remote_modified:
-                        continue
-                # If this is reached, the file needs to be downloaded
-                logging.info("Downloading file '{}'...".format(path))
-                if not exists(dirname(path)):
-                    makedirs(dirname(path))
-                with open(path, 'wb') as f:
-                    f.write(s.get(file['url']).content)
-                utime(
-                        path,
-                        (remote_modified.timestamp(), remote_modified.timestamp()))
+            course_code = course['course_code']
+            for folder in folders:
+                files = s.getjson('/api/v1/folders/{}/files'.format(folder['id']))
+                folder_path = folder['full_name']
+                for file in files:
+                    path = join(target, course_code, folder_path, file['filename'])
+                    remote_modified = dateutil.parser.parse(file['modified_at'])
+                    if exists(path):
+                        local_modified = (
+                                datetime
+                                .fromtimestamp(getmtime(path))
+                                .astimezone(remote_modified.tzinfo))
+                        if local_modified == remote_modified:
+                            continue
+                    # If this is reached, the file needs to be downloaded
+                    logging.info("Downloading file '{}'...".format(path))
+                    if not exists(dirname(path)):
+                        makedirs(dirname(path))
+                    with open(path, 'wb') as f:
+                        f.write(s.get(file['url']).content)
+                    utime(
+                            path,
+                            (remote_modified.timestamp(), remote_modified.timestamp()))
 except requests.exceptions.ConnectionError as e:
     logging.warning('Connection error. Make sure you are connected to the Innernette.')
